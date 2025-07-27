@@ -35,6 +35,10 @@ func clamp(n int, u int, l int) int {
 }
 
 func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point) []image.Point {
+	if p.X < 0 || p.X >= m.Bounds().Dx() || p.Y < 0 || p.Y >= m.Bounds().Dy() {
+		return seeds
+	}
+
 	r, g, b, a := m.At(p.X, p.Y).RGBA()
 	if r != 0 || g != 0 || b != 0 || a != 0 { // if the pixel has been changed already
 		return seeds
@@ -77,11 +81,9 @@ func NewFloodFill(width int, height int) *image.RGBA {
 	seeds := make([]image.Point, 0)
 	seeds = append(seeds, initialSeed)
 
-	loops := 1000000
-	for i := range loops {
-		if i%(loops/100) == 0 {
-			fmt.Println(float64(i)/float64(loops)*100, "%")
-		}
+	total := width * height
+
+	for {
 		seed := seeds[rand.Intn(len(seeds))]
 
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, -1}))
@@ -92,6 +94,10 @@ func NewFloodFill(width int, height int) *image.RGBA {
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, -1}))
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 0}))
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 1}))
+
+		if len(seeds) >= total {
+			break
+		}
 	}
 
 	return m
