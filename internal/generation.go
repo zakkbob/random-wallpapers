@@ -83,8 +83,15 @@ func NewFloodFill(width int, height int) *image.RGBA {
 
 	total := width * height
 
+	processed := 0
+
 	for {
-		seed := seeds[rand.Intn(len(seeds))]
+		if processed >= total {
+			break
+		}
+
+		i := rand.Intn(len(seeds))
+		seed := seeds[i]
 
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, -1}))
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 0}))
@@ -95,9 +102,9 @@ func NewFloodFill(width int, height int) *image.RGBA {
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 0}))
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 1}))
 
-		if len(seeds) >= total {
-			break
-		}
+		seeds[i] = seeds[len(seeds)-1]
+		seeds = seeds[:len(seeds)-1]
+		processed++
 	}
 
 	return m
