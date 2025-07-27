@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -7,22 +7,10 @@ import (
 	"image/png"
 	"math/rand"
 	"os"
-	"os/exec"
-	"time"
 )
 
-func changeWallpaper(dir string) error {
-	monitor := "eDP-1"
-	arg := monitor + "," + dir
-	_, err := exec.Command("hyprctl", "hyprpaper", "wallpaper", arg).Output()
-	if err != nil {
-		return fmt.Errorf("failed to change wallpaper: %w", err)
-	}
-	return nil
-}
-
-func savePNG(m image.Image, name string) error {
-	f, err := os.Create(name + ".png")
+func SavePNG(m image.Image, name string) error {
+	f, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("creating file: %w", err)
 	}
@@ -80,7 +68,7 @@ func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point
 	return seeds
 }
 
-func newFloodFill(width int, height int) *image.RGBA {
+func NewFloodFill(width int, height int) *image.RGBA {
 	m := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	initialSeed := image.Point{X: width / 2, Y: height / 2}
@@ -89,7 +77,11 @@ func newFloodFill(width int, height int) *image.RGBA {
 	seeds := make([]image.Point, 0)
 	seeds = append(seeds, initialSeed)
 
-	for range 10000000 {
+	loops := 1000000
+	for i := range loops {
+		if i%(loops/100) == 0 {
+			fmt.Println(float64(i)/float64(loops)*100, "%")
+		}
 		seed := seeds[rand.Intn(len(seeds))]
 
 		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, -1}))
@@ -103,26 +95,4 @@ func newFloodFill(width int, height int) *image.RGBA {
 	}
 
 	return m
-}
-
-func main() {
-	m := newFloodFill(1000, 1000)
-
-	err := savePNG(m, "image")
-	if err != nil {
-		panic(err)
-	}
-}
-
-func hyprpaperChange() {
-	FPS := 10
-	var err error
-	for {
-		time.Sleep(time.Millisecond * time.Duration(1000/FPS))
-		_, err = exec.Command("hyprctl", "hyprpaper", "wallpaper", "eDP-1,~/Downloads/a_moon_over_a_mountain.png").Output()
-		if err != nil {
-			fmt.Printf("%v", err)
-		}
-	}
-
 }
