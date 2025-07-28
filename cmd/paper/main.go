@@ -12,7 +12,7 @@ import (
 func main() {
 	width := flag.Int("width", 100, "Width of the image")
 	height := flag.Int("height", 100, "Height of the image")
-	monitor := flag.String("monitor", "", "Name of monitor to apply the wallpaper to (Run `hyprctl monitors` to see them)")
+	monitor := flag.String("monitor", "", "Name of monitor to apply the wallpaper to (Run hyprctl monitors to list them)")
 	cR := flag.Int("sr", 128, "Seed colour (Red channel)")
 	cG := flag.Int("sg", 128, "Seed colour (Green channel)")
 	cB := flag.Int("sb", 128, "Seed colour (Blue channel)")
