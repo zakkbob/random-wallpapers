@@ -6,7 +6,7 @@ Generate random wallpapers using maths!
 
 ## How do i use it?
 (explanation coming soon...) 
-In the meantime, look at the [pretty demos](https://github.com/zakkbob/dynamic-wallpapers/edit/main/README.md#random-demos)
+In the meantime, look at the [pretty demos](https://github.com/zakkbob/dynamic-wallpapers/blob/main/README.md#random-demos))
 
 ## How does it work?
 I'm too tired to explain right now. :/
