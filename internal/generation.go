@@ -24,17 +24,7 @@ func SavePNG(m image.Image, name string) error {
 	return nil
 }
 
-func clamp(n int, u int, l int) int {
-	if n < l {
-		return l
-	}
-	if n > u {
-		return u
-	}
-	return n
-}
-
-func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point) []image.Point {
+func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point, rMul float64, gMul float64, bMul float64) []image.Point {
 	if p.X < 0 || p.X >= m.Bounds().Dx() || p.Y < 0 || p.Y >= m.Bounds().Dy() {
 		return seeds
 	}
@@ -56,27 +46,25 @@ func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point
 	c.G = uint8(g >> 8)
 	c.B = uint8(b >> 8)
 
-	var mul float64 = 2
-
 	var (
-		rR = int(rand.NormFloat64() * mul)
-		rG = int(rand.NormFloat64() * mul)
-		rB = int(rand.NormFloat64() * mul)
+		rR = int(rand.NormFloat64() * rMul)
+		rG = int(rand.NormFloat64() * gMul)
+		rB = int(rand.NormFloat64() * bMul)
 	)
 
-	c.R = uint8(clamp(int(c.R)+rR, 255, 0))
-	c.G = uint8(clamp(int(c.G)+rG, 255, 0))
-	c.B = uint8(clamp(int(c.B)+rB, 255, 0))
+	c.R = uint8(Clamp(int(c.R)+rR, 0, 255))
+	c.G = uint8(Clamp(int(c.G)+rG, 0, 255))
+	c.B = uint8(Clamp(int(c.B)+rB, 0, 255))
 
 	m.Set(p.X, p.Y, c)
 	return seeds
 }
 
-func NewFloodFill(width int, height int) *image.RGBA {
+func NewFloodFill(width int, height int, seed color.RGBA, rMul float64, gMul float64, bMul float64) *image.RGBA {
 	m := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	initialSeed := image.Point{X: width / 2, Y: height / 2}
-	m.Set(initialSeed.X, initialSeed.Y, color.RGBA{R: 100, G: 70, B: 28, A: 255})
+	m.Set(initialSeed.X, initialSeed.Y, seed)
 
 	seeds := make([]image.Point, 0)
 	seeds = append(seeds, initialSeed)
@@ -93,14 +81,14 @@ func NewFloodFill(width int, height int) *image.RGBA {
 		i := rand.Intn(len(seeds))
 		seed := seeds[i]
 
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, -1}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 0}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 1}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{0, -1}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{0, 1}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, -1}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 0}))
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 1}))
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, -1}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 0}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 1}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{0, -1}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{0, 1}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, -1}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 0}), rMul, gMul, bMul)
+		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 1}), rMul, gMul, bMul)
 
 		seeds[i] = seeds[len(seeds)-1]
 		seeds = seeds[:len(seeds)-1]
