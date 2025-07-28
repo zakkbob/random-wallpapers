@@ -56,7 +56,7 @@ func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point
 	c.G = uint8(g >> 8)
 	c.B = uint8(b >> 8)
 
-	var mul float64 = 5
+	var mul float64 = 2
 
 	var (
 		rR = int(rand.NormFloat64() * mul)
