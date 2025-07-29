@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -77,17 +78,20 @@ func (s *seeds) add(f *internal.FloodFill) {
 }
 
 var seedsFlag seeds
-var widthFlag int
-var heightFlag int
-var monitorFlag string
+var width int
+var height int
+var monitor string
+var output string
 var redMul float64
 var greenMul float64
 var blueMul float64
 
 func init() {
-	flag.IntVar(&widthFlag, "width", 1000, "Width of the image")
-	flag.IntVar(&heightFlag, "height", 1000, "Height of the image")
-	flag.StringVar(&monitorFlag, "monitor", "", "Name of monitor to apply the wallpaper to (Run hyprctl monitors to list them)")
+	defaultPath := filepath.Join(os.TempDir(), "random-wallpaper.png")
+	flag.StringVar(&output, "output", defaultPath, "Image save location (including filename and .png extension)")
+	flag.IntVar(&width, "width", 1000, "Width of the image")
+	flag.IntVar(&height, "height", 1000, "Height of the image")
+	flag.StringVar(&monitor, "monitor", "", "Name of monitor to apply the wallpaper to (Run hyprctl monitors to list them)")
 	flag.Float64Var(&redMul, "rv", 1, "Red variability")
 	flag.Float64Var(&greenMul, "gv", 1, "Green variability")
 	flag.Float64Var(&blueMul, "bv", 1, "Blue variability")
@@ -99,28 +103,27 @@ func main() {
 
 	fmt.Print(seedsFlag.String())
 
-	if monitorFlag == "" {
-		fmt.Print("--monitor flag is required")
-		os.Exit(1)
-	}
-
 	redMul = internal.Clamp(redMul, 0, 255)
 	greenMul = internal.Clamp(greenMul, 0, 255)
 	blueMul = internal.Clamp(blueMul, 0, 255)
 
-	f := internal.NewFloodFill(widthFlag, heightFlag)
+	f := internal.NewFloodFill(width, height)
 	f.SetMul(redMul, greenMul, blueMul)
 
 	seedsFlag.add(&f)
 
 	f.Generate()
 
-	dir := os.TempDir() + "/dynamic-wallpaper-image.png"
-
-	err := f.SavePNG(dir)
+	err := f.SavePNG(output)
 	if err != nil {
 		panic(err)
 	}
 
-	internal.SetWallpaper(monitorFlag, dir)
+	output, err = filepath.Abs(output)
+	if err != nil {
+		panic(err)
+	}
+	if monitor != "" {
+		internal.SetWallpaper(monitor, output)
+	}
 }
