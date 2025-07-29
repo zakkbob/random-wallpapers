@@ -41,8 +41,8 @@ func (f *FloodFill) NewSeed(x int, y int, r int, g int, b int) {
 
 	c.A = 0
 	c.R = uint8(Clamp(r, 0, 255))
-	c.G = uint8(Clamp(r, 0, 255))
-	c.B = uint8(Clamp(r, 0, 255))
+	c.G = uint8(Clamp(g, 0, 255))
+	c.B = uint8(Clamp(b, 0, 255))
 
 	f.seeds = append(f.seeds, image.Point{X: x, Y: y})
 	f.image.SetRGBA(x, y, c)
@@ -83,8 +83,8 @@ func (f *FloodFill) grow(seed image.Point, dX int, dY int) {
 	c := f.image.RGBAAt(seed.X, seed.Y)
 
 	c.R = uint8(Clamp(int(c.R)+int(rand.NormFloat64()*f.rMul), 0, 255))
-	c.G = uint8(Clamp(int(c.G)+int(rand.NormFloat64()*f.rMul), 0, 255))
-	c.B = uint8(Clamp(int(c.B)+int(rand.NormFloat64()*f.rMul), 0, 255))
+	c.G = uint8(Clamp(int(c.G)+int(rand.NormFloat64()*f.gMul), 0, 255))
+	c.B = uint8(Clamp(int(c.B)+int(rand.NormFloat64()*f.bMul), 0, 255))
 	c.A = 255
 
 	f.image.SetRGBA(p.X, p.Y, c)
