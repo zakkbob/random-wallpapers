@@ -1,38 +1,118 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/zakkbob/dynamic-wallpaper/internal"
 )
 
-func main() {
-	width := flag.Int("width", 100, "Width of the image")
-	height := flag.Int("height", 100, "Height of the image")
-	monitor := flag.String("monitor", "", "Name of monitor to apply the wallpaper to (Run hyprctl monitors to list them)")
-	cR := flag.Int("sr", 128, "Seed colour (Red channel)")
-	cG := flag.Int("sg", 128, "Seed colour (Green channel)")
-	cB := flag.Int("sb", 128, "Seed colour (Blue channel)")
-	rV := flag.Float64("rv", 1, "Red variability")
-	gV := flag.Float64("gv", 1, "Green variability")
-	bV := flag.Float64("bv", 1, "Blue variability")
+// Used to parse custom seed flag
+type seed struct {
+	X, Y    int
+	R, G, B int
+}
 
+type seeds []seed
+
+func (s *seeds) String() string {
+	str := strings.Builder{}
+	for i, d := range *s {
+		str.WriteString(fmt.Sprintf("Seed %d - Position %d, %d; Colour %d, %d, %d\n", i, d.X, d.Y, d.R, d.G, d.B))
+	}
+	return str.String()
+}
+
+func (s *seeds) Set(value string) error {
+	v := strings.Split(value, ",")
+	if len(v) != 5 {
+		return errors.New("(must follow 'x,y,r,g,b' e.g '100,100,120,50,8')")
+	}
+
+	msg := "invalid %s value '%s' (must be an integer between 0 and 255)"
+
+	x, err := strconv.Atoi(v[0])
+	if err != nil {
+		return fmt.Errorf(msg, "x", v[0])
+	}
+
+	y, err := strconv.Atoi(v[1])
+	if err != nil {
+		return fmt.Errorf(msg, "y", v[1])
+	}
+
+	r, err := strconv.Atoi(v[2])
+	if err != nil {
+		return fmt.Errorf(msg, "r", v[2])
+	}
+
+	g, err := strconv.Atoi(v[3])
+	if err != nil {
+		return fmt.Errorf(msg, "g", v[3])
+	}
+
+	b, err := strconv.Atoi(v[4])
+	if err != nil {
+		return fmt.Errorf(msg, "b", v[4])
+	}
+
+	*s = append(*s, seed{
+		X: x,
+		Y: y,
+		R: r,
+		G: g,
+		B: b,
+	})
+	return nil
+}
+
+func (s *seeds) add(f *internal.FloodFill) {
+	for _, d := range *s {
+		f.NewSeed(d.X, d.Y, d.R, d.G, d.B)
+	}
+}
+
+var seedsFlag seeds
+var widthFlag int
+var heightFlag int
+var monitorFlag string
+var redMul float64
+var greenMul float64
+var blueMul float64
+
+func init() {
+	flag.IntVar(&widthFlag, "width", 1000, "Width of the image")
+	flag.IntVar(&heightFlag, "height", 1000, "Height of the image")
+	flag.StringVar(&monitorFlag, "monitor", "", "Name of monitor to apply the wallpaper to (Run hyprctl monitors to list them)")
+	flag.Float64Var(&redMul, "rv", 1, "Red variability")
+	flag.Float64Var(&greenMul, "gv", 1, "Green variability")
+	flag.Float64Var(&blueMul, "bv", 1, "Blue variability")
+	flag.Var(&seedsFlag, "seed", "Add seeds (Usage: --seed x,y,(r,g,b) e.g --seed 100,100,(200,50,80)) (Can be used multiple times)")
+}
+
+func main() {
 	flag.Parse()
 
-	if *monitor == "" {
+	fmt.Print(seedsFlag.String())
+
+	if monitorFlag == "" {
 		fmt.Print("--monitor flag is required")
 		os.Exit(1)
 	}
 
-	*cR = internal.Clamp(*cR, 0, 255)
-	*cG = internal.Clamp(*cG, 0, 255)
-	*cB = internal.Clamp(*cB, 0, 255)
+	redMul = internal.Clamp(redMul, 0, 255)
+	greenMul = internal.Clamp(greenMul, 0, 255)
+	blueMul = internal.Clamp(blueMul, 0, 255)
 
-	f := internal.NewFloodFill(*width, *height)
-	f.NewSeed(*width/2, *height/2, *cR, *cG, *cB)
-	f.SetMul(*rV, *gV, *bV)
+	f := internal.NewFloodFill(widthFlag, heightFlag)
+	f.SetMul(redMul, greenMul, blueMul)
+
+	seedsFlag.add(&f)
+
 	f.Generate()
 
 	dir := os.TempDir() + "/dynamic-wallpaper-image.png"
@@ -42,5 +122,5 @@ func main() {
 		panic(err)
 	}
 
-	internal.SetWallpaper(*monitor, dir)
+	internal.SetWallpaper(monitorFlag, dir)
 }
