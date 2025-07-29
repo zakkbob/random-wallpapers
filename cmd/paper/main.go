@@ -95,7 +95,7 @@ func init() {
 	flag.Float64Var(&redMul, "rv", 1, "Red variability")
 	flag.Float64Var(&greenMul, "gv", 1, "Green variability")
 	flag.Float64Var(&blueMul, "bv", 1, "Blue variability")
-	flag.Var(&seedsFlag, "seed", "Add seeds (Usage: --seed x,y,(r,g,b) e.g --seed 100,100,(200,50,80)) (Can be used multiple times)")
+	flag.Var(&seedsFlag, "seed", "Add seeds (Usage: --seed x,y,r,g,b e.g --seed 100,100,200,50,80) (Can be used multiple times)")
 }
 
 func main() {
