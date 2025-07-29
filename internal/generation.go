@@ -9,91 +9,132 @@ import (
 	"os"
 )
 
-func SavePNG(m image.Image, name string) error {
-	f, err := os.Create(name)
+type FloodFill struct {
+	width  int
+	height int
+
+	image *image.RGBA
+	seeds []image.Point
+
+	rMul float64
+	gMul float64
+	bMul float64
+
+	generated bool
+}
+
+func NewFloodFill(width int, height int) FloodFill {
+	m := image.NewRGBA(image.Rect(0, 0, width, height))
+	return FloodFill{
+		width:     width,
+		height:    height,
+		image:     m,
+		rMul:      1,
+		gMul:      1,
+		bMul:      1,
+		generated: false,
+	}
+}
+
+func (f *FloodFill) NewSeed(x int, y int, r int, g int, b int) {
+	c := color.RGBA{}
+
+	c.A = 0
+	c.R = uint8(Clamp(r, 0, 255))
+	c.G = uint8(Clamp(r, 0, 255))
+	c.B = uint8(Clamp(r, 0, 255))
+
+	f.seeds = append(f.seeds, image.Point{X: x, Y: y})
+	f.image.SetRGBA(x, y, c)
+}
+
+func (f *FloodFill) SetMul(rMul float64, gMul float64, bMul float64) {
+	f.rMul = rMul
+	f.gMul = gMul
+	f.bMul = bMul
+}
+
+func (f *FloodFill) randSeed() (int, image.Point) {
+	i := rand.Intn(len(f.seeds))
+	return i, f.seeds[i]
+}
+
+func (f *FloodFill) changed(p image.Point) bool {
+	c := f.image.RGBAAt(p.X, p.Y)
+	return c.A == 255
+}
+
+func (f *FloodFill) grow(seed image.Point, dX int, dY int) {
+	p := image.Point{
+		X: seed.X + dX,
+		Y: seed.Y + dY,
+	}
+
+	if p.X < 0 || p.X >= f.width || p.Y < 0 || p.Y >= f.height {
+		return
+	}
+
+	if f.changed(p) { // if the pixel has been changed already
+		return
+	}
+
+	f.seeds = append(f.seeds, p)
+
+	c := f.image.RGBAAt(seed.X, seed.Y)
+
+	c.R = uint8(Clamp(int(c.R)+int(rand.NormFloat64()*f.rMul), 0, 255))
+	c.G = uint8(Clamp(int(c.G)+int(rand.NormFloat64()*f.rMul), 0, 255))
+	c.B = uint8(Clamp(int(c.B)+int(rand.NormFloat64()*f.rMul), 0, 255))
+	c.A = 255
+
+	f.image.SetRGBA(p.X, p.Y, c)
+}
+
+func (f *FloodFill) removeSeed(i int) {
+	f.seeds[i] = f.seeds[len(f.seeds)-1]
+	f.seeds = f.seeds[:len(f.seeds)-1]
+}
+
+func (f *FloodFill) Generate() {
+	if f.generated {
+		panic("flood fill has already been generated!")
+	}
+	f.generated = true
+	for {
+		if len(f.seeds) == 0 {
+			break
+		}
+
+		i, seed := f.randSeed()
+
+		f.grow(seed, -1, -1)
+		f.grow(seed, -1, 0)
+		f.grow(seed, -1, 1)
+		f.grow(seed, 0, -1)
+		f.grow(seed, 0, 1)
+		f.grow(seed, 1, -1)
+		f.grow(seed, 1, 0)
+		f.grow(seed, 1, 1)
+
+		f.removeSeed(i)
+	}
+}
+
+func (f *FloodFill) Image() *image.RGBA {
+	return f.image
+}
+
+func (f *FloodFill) SavePNG(name string) error {
+	file, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("creating file: %w", err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	err = png.Encode(f, m)
+	err = png.Encode(file, f.image)
 	if err != nil {
 		return fmt.Errorf("encoding and saving image: %w", err)
 	}
 
 	return nil
-}
-
-func perturb(m *image.RGBA, seeds []image.Point, seed image.Point, p image.Point, rMul float64, gMul float64, bMul float64) []image.Point {
-	if p.X < 0 || p.X >= m.Bounds().Dx() || p.Y < 0 || p.Y >= m.Bounds().Dy() {
-		return seeds
-	}
-
-	r, g, b, a := m.At(p.X, p.Y).RGBA()
-	if r != 0 || g != 0 || b != 0 || a != 0 { // if the pixel has been changed already
-		return seeds
-	}
-
-	seeds = append(seeds, p)
-
-	r, g, b, a = m.At(seed.X, seed.Y).RGBA()
-
-	// do a random Guassian perturbation on all channels
-	c := color.RGBA{}
-	c.A = 255
-
-	c.R = uint8(r >> 8)
-	c.G = uint8(g >> 8)
-	c.B = uint8(b >> 8)
-
-	var (
-		rR = int(rand.NormFloat64() * rMul)
-		rG = int(rand.NormFloat64() * gMul)
-		rB = int(rand.NormFloat64() * bMul)
-	)
-
-	c.R = uint8(Clamp(int(c.R)+rR, 0, 255))
-	c.G = uint8(Clamp(int(c.G)+rG, 0, 255))
-	c.B = uint8(Clamp(int(c.B)+rB, 0, 255))
-
-	m.Set(p.X, p.Y, c)
-	return seeds
-}
-
-func NewFloodFill(width int, height int, seed color.RGBA, rMul float64, gMul float64, bMul float64) *image.RGBA {
-	m := image.NewRGBA(image.Rect(0, 0, width, height))
-
-	initialSeed := image.Point{X: width / 2, Y: height / 2}
-	m.Set(initialSeed.X, initialSeed.Y, seed)
-
-	seeds := make([]image.Point, 0)
-	seeds = append(seeds, initialSeed)
-
-	total := width * height
-
-	processed := 0
-
-	for {
-		if processed >= total {
-			break
-		}
-
-		i := rand.Intn(len(seeds))
-		seed := seeds[i]
-
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, -1}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 0}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{-1, 1}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{0, -1}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{0, 1}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, -1}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 0}), rMul, gMul, bMul)
-		seeds = perturb(m, seeds, seed, seed.Add(image.Point{1, 1}), rMul, gMul, bMul)
-
-		seeds[i] = seeds[len(seeds)-1]
-		seeds = seeds[:len(seeds)-1]
-		processed++
-	}
-
-	return m
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"image/color"
 	"os"
 
 	"github.com/zakkbob/dynamic-wallpaper/internal"
@@ -27,18 +26,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	c := color.RGBA{
-		R: uint8(internal.Clamp(*cR, 0, 255)),
-		G: uint8(internal.Clamp(*cG, 0, 255)),
-		B: uint8(internal.Clamp(*cB, 0, 255)),
-		A: 255,
-	}
+	*cR = internal.Clamp(*cR, 0, 255)
+	*cG = internal.Clamp(*cG, 0, 255)
+	*cB = internal.Clamp(*cB, 0, 255)
 
-	m := internal.NewFloodFill(*width, *height, c, *rV, *gV, *bV)
+	f := internal.NewFloodFill(*width, *height)
+	f.NewSeed(*width/2, *height/2, *cR, *cG, *cB)
+	f.SetMul(*rV, *gV, *bV)
+	f.Generate()
 
 	dir := os.TempDir() + "/dynamic-wallpaper-image.png"
 
-	err := internal.SavePNG(m, dir)
+	err := f.SavePNG(dir)
 	if err != nil {
 		panic(err)
 	}
