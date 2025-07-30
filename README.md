@@ -10,9 +10,9 @@ Generate random wallpapers using maths!
 
 Currently, the only way is to build and install it yourself (epic github actions coming soon...)
 - Clone the repo using git `git clone https://github.com/zakkbob/random-wallpapers` (install git [here](https://git-scm.com/downloads) if you don't have it already)
-- Navigate to project root `cd ./random-wallpapers`
-- Install it using the go cli `go install ./cmd/randomwallpapers` (install go [here](https://go.dev/doc/install) if you don't have it already)
-- You can now call the `randomwallpapers` command! (See [flags](#flags) for more info on how to use it)
+- Navigate to the repository `cd ./random-wallpapers`
+- Build and install it using the go cli `go install ./cmd/randomwallpapers` (install go [here](https://go.dev/doc/install) if you don't have it already)
+- You can now use the `randomwallpapers` command! (See [flags](#flags) for more info on how to use it)
 
 ### Flags
 
@@ -43,13 +43,13 @@ They are **not** applied by default
 
 All the colour in each image originates from a single (or multiple) points, these are called seeds.
 A seed has a position and colour value, from which colour will grow from while the image is being generated.
-An example of this is the ['red vs blue' demo image](#multiple-seeds-red-vs-blue), to create this I placed a red seed in the top left and a blue seed in the bottom right, the growing colour from each then met in the middle to form that sort-of line.
+An example of this is the ['red vs blue' demo image](#multiple-seeds-red-vs-blue), to create this I placed a red seed in the top left and a blue seed in the bottom right, the growing colour from each then met in the middle to form that sort-of line thingy.
 
 - `--seed int,int,int,int,int` adds a seed to the image, this flag can be used multiple times to add as many as you like. They must follow this format: `--seed x,y,r,g,b`. (e.g `--seed 100,120,56,75,120` for position `100, 120` and colour `rgb(56, 75, 120)`) 
 
 ## How does it work?
 
-I'm too tired to explain right now. :/
+I'm too tired to explain right now. :/ (Feel free to read the code though, the magic happens in [FloodFill.Generate()](https://github.com/zakkbob/random-wallpapers/blob/main/internal/generation.go#L98) and [FloodFill.grow()](https://github.com/zakkbob/random-wallpapers/blob/42d4d84f569d76281bf22461f53fecf6f1083ef1/internal/generation.go#L67))
 
 ## Random demos
 
