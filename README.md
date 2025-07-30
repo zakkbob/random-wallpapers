@@ -3,13 +3,49 @@
 Generate random wallpapers using maths!
 
 > [!IMPORTANT]
-> The wallpapers currently get applied using hyprpaper. Support for other
-> software/OSes or just saving the image instead is coming soon...
+> Automatic application of wallpapers is currently done using hyprpaper. 
+> Support for other software/OSes is coming soon...
 
 ## How do i use it?
 
-(explanation coming soon...)
-In the meantime, look at the [pretty demos](#random-demos))
+Currently, the only way is to built it yourself (epic github actions coming soon...)
+- Clone the repo using git `git clone https://github.com/zakkbob/random-wallpapers` (install git [here](https://git-scm.com/downloads) if you don't have it already)
+- Navigate to project root `cd ./random-wallpapers`
+- Install it using `go install ./cmd/randomwallpapers` (install go [here](https://go.dev/doc/install) if you don't have it already)
+- You can now call the `randomwallpapers` command! (See [flags](#flags) for more info on how to use it)
+
+### Flags
+
+## Image size
+
+The height and width should be specified or a 100x100px image will be generated
+
+- `--height int` for height
+- `--width int` for width
+
+#### Variability flags
+
+Allow you to change the variability of a specific colour channel (default: 1)
+
+- `--rv float` for red channel
+- `--gv float` for green channel
+- `--bv float` for blue channel
+
+### Saving and applying
+
+Wallpapers are automatically saved to your OS's temp directory (wherever that may be)
+They are **not** applied by default
+
+- `--output string` sets the location to save the image, including filename and png extension (e.g `./image.png`)
+- `--monitor string` is used to set which monitor the wallpaper is applied to, this currently only works with hyprpaper (e.g `DP-1`)
+
+### Seeds (The fun part)
+
+All the colour in each image originates from a single (or multiple) points, these are called seeds.
+A seed has a position and colour value, from which colour will grow from while the iage is generated.
+An example of this is the ['red vs blue' demo image](#multiple-seeds-red-vs-blue), to create this I placed a red seed in the top left and a blue seed in the bottom right, the growing colour from each then met in the middle to form that sort-of line.
+
+- `--seed int,int,int,int,int` adds a seed to the image, this flag can be used multiple times to add as many as you like. They follow this format: `--seed x,y,r,g,b`. (e.g `--seed 100,120,56,75,120` for position `100, 120` and colour `rgb(56, 75, 120)`) 
 
 ## How does it work?
 
