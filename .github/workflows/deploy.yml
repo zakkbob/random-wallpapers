@@ -43,7 +43,7 @@ jobs:
           cache-dependency-path: ./go.sum
 
       - name: Build Go (WASM) 
-        run: GOOS=js GOARCH=wasm go build ./web -o ./web/src/main.wasm 
+        run: GOOS=js GOARCH=wasm go build -o ./web/src/main.wasm ./web 
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
