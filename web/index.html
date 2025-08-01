@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" href="/src/output.css" />
+	<script src="/src/wasm_exec.js"></script>
+	<script>
+		const go = new Go();
+		WebAssembly.instantiateStreaming(fetch("src/main.wasm"), go.importObject).then((result) => {
+			go.run(result.instance);
+		});
+	</script>
+</head>
+
+<body class="m-0">
+	<div class="h-dvh w-screen m-0 flex flex-row gap-0 bg-gray-700">
+		<div class="w-full h-dvh">
+			<img id="img" class="w-[100%] h-[100%] object-contain"></img>
+		</div>
+		<div class="w-fit h-dvh flex flex-col bg-gray-800 min-w-100 p-4 rounded-l-2xl text-white">
+			<h1 class="text-3xl">Settings</h1>
+			<div>
+				<label for="width-slider">Width: </label>
+				<input id="width-slider" type="number" min="1" max="10000" />
+			</div>
+			<div>
+				<label for="height-slider">Height: </label>
+				<input id="height-slider" type="number" min="1" max="10000" />
+			</div>
+			<button onclick="generate()"
+				class="p-4  bg-gray-500 w-fit hover:bg-gray-400 rounded-lg">Generate</button>
+		</div>
+	</div>
+	<script>
+		const widthSlider = document.getElementById("width-slider");
+		const heightSlider = document.getElementById("height-slider");
+
+		function generate() {
+			const width = Number(widthSlider.value);
+			const height = Number(heightSlider.value);
+			newFill(width, height)
+			addSeed(50, 50, 255, 120, 40)
+			show()
+		}
+	</script>
+</body>
+
+</html>
