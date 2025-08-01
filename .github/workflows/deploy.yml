@@ -1,0 +1,62 @@
+name: Deploy github pages?
+
+on:
+  push:
+    branches: [main]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Tailwind CLI
+        run: npm install -D @tailwindcss/cli
+
+      - name: Build CSS
+        run: npx tailwindcss -i ./web/src/styles.css -o ./web/src/output.css
+
+      - name: Set up Go (1.24.5)
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+          check-latest: true
+          cache-dependency-path: ./go.sum
+
+      - name: Build Go (WASM) 
+        run: GOOS=js GOARCH=wasm go build ./web -o ./web/src/main.wasm 
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./web/
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
