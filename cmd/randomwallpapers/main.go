@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zakkbob/dynamic-wallpaper/internal"
+	"github.com/zakkbob/random-wallpapers/internal"
 )
 
 // Used to parse custom seed flag
