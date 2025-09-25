@@ -46,6 +46,7 @@ A seed has a position and colour value, from which colour will grow from while t
 An example of this is the ['red vs blue' demo image](#multiple-seeds-red-vs-blue), to create this I placed a red seed in the top left and a blue seed in the bottom right, the growing colour from each then met in the middle to form that sort-of line thingy.
 
 - `--seed int,int,int,int,int` adds a seed to the image, this flag can be used multiple times to add as many as you like. They must follow this format: `--seed x,y,r,g,b`. (e.g `--seed 100,120,56,75,120` for position `100, 120` and colour `rgb(56, 75, 120)`) 
+- `--image <path>` can also be used to automatically create seeds from an image, using poisson sampling
 
 ## How does it work?
 
