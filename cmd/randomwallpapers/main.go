@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -78,6 +79,7 @@ func (s *seeds) add(f *internal.FloodFill) {
 }
 
 var seedsFlag seeds
+var imagePathFlag string
 var width int
 var height int
 var monitor string
@@ -96,6 +98,7 @@ func init() {
 	flag.Float64Var(&greenMul, "gv", 1, "Green variability")
 	flag.Float64Var(&blueMul, "bv", 1, "Blue variability")
 	flag.Var(&seedsFlag, "seed", "Add seeds (Usage: --seed x,y,r,g,b e.g --seed 100,100,200,50,80) (Can be used multiple times)")
+	flag.StringVar(&imagePathFlag, "image", "", "Image to seed from")
 }
 
 func main() {
@@ -107,7 +110,23 @@ func main() {
 	greenMul = internal.Clamp(greenMul, 0, 255)
 	blueMul = internal.Clamp(blueMul, 0, 255)
 
-	f := internal.NewFloodFill(width, height)
+	var f internal.FloodFill
+	if imagePathFlag == "" {
+		f = internal.NewFloodFill(width, height)
+	} else {
+		img, err := os.Open(imagePathFlag)
+		if err != nil {
+			panic(err)
+		}
+
+		m, _, err := image.Decode(img)
+		if err != nil {
+			panic(err)
+		}
+
+		f = internal.NewImageFloodFill(m, 2)
+	}
+
 	f.SetMul(redMul, greenMul, blueMul)
 
 	seedsFlag.add(&f)

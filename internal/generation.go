@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"math/rand"
 	"os"
 )
@@ -36,7 +37,113 @@ func NewFloodFill(width int, height int) FloodFill {
 	}
 }
 
-func (f *FloodFill) NewSeed(x int, y int, r int, g int, b int) {
+func pow(x, y int) int {
+	t := x
+	for range y - 1 {
+		x *= t
+	}
+	return x
+}
+
+func dist(p0, p1 *image.Point) float64 {
+	d := math.Sqrt(float64(pow(p0.X-p1.X, 2) + pow(p0.Y-p1.Y, 2)))
+	return d
+}
+
+func NewImageFloodFill(m image.Image, r int) FloodFill {
+	f := NewFloodFill(m.Bounds().Dx(), m.Bounds().Dy())
+
+	width := m.Bounds().Dx()
+	height := m.Bounds().Dy()
+
+	active := make([]*image.Point, 0)
+
+	cellSize := math.Floor(float64(r) / math.Sqrt2)
+
+	xCells := int(math.Ceil(float64(width)/cellSize)) + 1
+	yCells := int(math.Ceil(float64(height)/cellSize)) + 1
+
+	grid := make([][]*image.Point, xCells)
+	for i := range xCells {
+		grid[i] = make([]*image.Point, yCells)
+	}
+
+	addSeed := func(p *image.Point) {
+		x := int(math.Floor(float64(p.X) / cellSize))
+		y := int(math.Floor(float64(p.Y) / cellSize))
+		grid[x][y] = p
+
+		r, g, b, _ := m.At(x, y).RGBA()
+		r >>= 8
+		g >>= 8
+		b >>= 8
+		f.NewSeed(x, y, int(r), int(g), int(b))
+	}
+
+	validPoint := func(p *image.Point) bool {
+		if p.X < 0 || p.X >= width || p.Y < 0 || p.Y >= height {
+			return false
+		}
+
+		x := int(math.Floor(float64(p.X) / cellSize))
+		y := int(math.Floor(float64(p.Y) / cellSize))
+		i0 := max(x-1, 0)
+		i1 := min(x+1, xCells-1)
+		j0 := max(y-1, 0)
+		j1 := min(y+1, yCells-1)
+
+		for i := i0; i <= i1; i++ {
+			for j := j0; j <= j1; j++ {
+				if grid[i][j] != nil && dist(grid[i][j], p) < float64(r) {
+					return false
+				}
+			}
+		}
+
+		return true
+	}
+
+	initSeed := &image.Point{
+		X: rand.Intn(width),
+		Y: rand.Intn(height),
+	}
+	active = append(active, initSeed)
+	addSeed(initSeed)
+
+	for len(active) > 0 {
+		i := rand.Intn(len(active))
+		p := active[i]
+
+		found := false
+		for range 30 {
+			theta := rand.Float64() * math.Pi * 2
+			newRadius := rand.Float64()*float64(r) + float64(r)
+			newP := &image.Point{
+				X: p.X + int(newRadius*math.Cos(theta)),
+				Y: p.Y + int(newRadius*math.Sin(theta)),
+			}
+
+			if !validPoint(newP) {
+				continue
+			}
+
+			addSeed(p)
+			active = append(active, newP)
+			found = true
+			break
+		}
+
+		if !found {
+			active[i] = active[len(active)-1]
+			active[len(active)-1] = nil
+			active = active[:len(active)-1]
+		}
+	}
+
+	return f
+}
+
+func (f *FloodFill) NewSeed(x, y int, r, g, b int) {
 	c := color.RGBA{}
 
 	c.A = 0
