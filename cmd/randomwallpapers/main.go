@@ -88,7 +88,7 @@ var redMul float64
 var greenMul float64
 var blueMul float64
 
-func init() {
+func main() {
 	defaultPath := filepath.Join(os.TempDir(), "random-wallpaper.png")
 	flag.StringVar(&output, "output", defaultPath, "Image save location (including filename and .png extension)")
 	flag.IntVar(&width, "width", 1000, "Width of the image")
@@ -99,9 +99,7 @@ func init() {
 	flag.Float64Var(&blueMul, "bv", 1, "Blue variability")
 	flag.Var(&seedsFlag, "seed", "Add seeds (Usage: --seed x,y,r,g,b e.g --seed 100,100,200,50,80) (Can be used multiple times)")
 	flag.StringVar(&imagePathFlag, "image", "", "Image to seed from")
-}
 
-func main() {
 	flag.Parse()
 
 	fmt.Print(seedsFlag.String())
